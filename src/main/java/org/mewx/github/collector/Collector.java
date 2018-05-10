@@ -26,7 +26,12 @@ import java.util.Map;
  * 7. save to database, delete the repo, save progress to db.
  */
 public class Collector extends CollectorCommon {
+
     public void run() throws SQLException {
+        run(Constants.DB_NAME);
+    }
+
+    public void run(String dbName) throws SQLException {
         // get connection
         Conn c = null;
         PropertyDb propertyDb = null;
@@ -35,7 +40,7 @@ public class Collector extends CollectorCommon {
 
         // try connecting
         try {
-            c = new Conn(Constants.DB_NAME);
+            c = new Conn(dbName);
             propertyDb = new PropertyDb(c);
             queryDb = new QueryDb(c);
         } catch (SQLException e) {
@@ -85,9 +90,9 @@ public class Collector extends CollectorCommon {
         c.close();
     }
 
-    private String getLastQueriedOrganizationContent(QueryDb queryDb, PropertyDb propertyDb) {
-        // TODO:
-        return "";
+    private String getLastQueriedOrganizationContent(QueryDb queryDb, PropertyDb propertyDb) throws SQLException {
+        ResultSet set = queryDb.select(new OrganizationList().TYPE);
+        return set.last() ? set.getString("content") : null;
     }
 
     private List<JsonObject> extractOrganization(String content) {

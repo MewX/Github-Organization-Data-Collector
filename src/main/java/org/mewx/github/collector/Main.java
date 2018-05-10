@@ -3,8 +3,10 @@ package org.mewx.github.collector;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
+import java.sql.SQLException;
+
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
         // https://api.github.com/organizations?per_page=100&client_id=Iv1.27ed2f902acf887a&client_secret=d162f756007a1977a05da6fc50efa85fb15da326
         StringBuffer dbName = new StringBuffer();
         LongOpt[] longOpts = new LongOpt[] {
@@ -26,6 +28,7 @@ public class Main {
                 case 'c':
                     arg = g.getOptarg();
                     System.err.println("collecting: " + (arg == null ? "null" : arg));
+                    new Collector().run(arg);
                     break;
                 case 'p':
                     arg = g.getOptarg();
