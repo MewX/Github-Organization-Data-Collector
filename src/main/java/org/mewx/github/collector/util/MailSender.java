@@ -16,7 +16,11 @@ import static org.mewx.github.collector.Constants.*;
 public class MailSender {
 
     public static void main(String[] args) {
-        send(MAIL_NAME, MAIL_SUBJECT, "testing mail");
+        send("testing mail");
+    }
+
+    public static void send(String content) {
+        send(MAIL_NAME, MAIL_SUBJECT, content);
     }
 
     public static void send(String to, String subject, String content) {
@@ -31,7 +35,7 @@ public class MailSender {
         Session session = Session.getInstance(props,
                 new javax.mail.Authenticator() {
                     protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(username, new String(Base64.getDecoder().decode(Base64.getDecoder().decode(Base64.getDecoder().decode("WWxoT2JHSXpRakJqUjBaNll6TmtkbU50VVQwPQ==".getBytes())))));
+                        return new PasswordAuthentication(username, new String(Base64.getDecoder().decode(Base64.getDecoder().decode(Base64.getDecoder().decode(Base64.getDecoder().decode(Base64.getDecoder().decode(Base64.getDecoder().decode("VmpGa05HSXhVWGxUYTJoVVYwaENVMWxYZEV0alZsWnhVVzFHVDJKSGR6SldSekV3WVRKS1ZrNVVRbGRXYkVZelZVWkZPVkJSUFQwPQ==".getBytes()))))))));
                     }
                 });
 

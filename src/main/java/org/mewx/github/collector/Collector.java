@@ -1,6 +1,7 @@
 package org.mewx.github.collector;
 
 import au.edu.uofa.sei.assignment1.collector.CollectorCommon;
+import au.edu.uofa.sei.assignment1.collector.LightNetwork;
 import au.edu.uofa.sei.assignment1.collector.db.Conn;
 import au.edu.uofa.sei.assignment1.collector.db.PropertyDb;
 import au.edu.uofa.sei.assignment1.collector.db.QueryDb;
@@ -33,20 +34,10 @@ public class Collector extends CollectorCommon {
 
     public void run(String dbName) throws SQLException {
         // get connection
-        Conn c = null;
-        PropertyDb propertyDb = null;
-        QueryDb queryDb = null;
+        Conn c = new Conn(dbName);
+        PropertyDb propertyDb = new PropertyDb(c);
+        QueryDb queryDb = new QueryDb(c);
         Map<String, String> prevReq = new HashMap<>();
-
-        // try connecting
-        try {
-            c = new Conn(dbName);
-            propertyDb = new PropertyDb(c);
-            queryDb = new QueryDb(c);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
 
         // get list one by one first (5000 * 100)
         while (true) {
@@ -54,7 +45,7 @@ public class Collector extends CollectorCommon {
             if (lastOrgListJson == null) {
                 // for the first request
                 prevReq = new OrganizationList().collect("0", prevReq, queryDb);
-                lastOrgListJson = getLastQueriedOrganizationContent(queryDb, propertyDb);
+                lastOrgListJson = prevReq.get(LightNetwork.HEADER_CONTENT);
             }
 
             List<JsonObject> orgList = extractOrganization(lastOrgListJson);
@@ -69,14 +60,16 @@ public class Collector extends CollectorCommon {
                 idxNextOrgFromTheList = findIndexInTheList(orgList, lastOrgId);
             }
 
-            // TODO: start working on current organization
+            // start working on current organization
             while (idxNextOrgFromTheList < orgList.size()) {
-                // TODO: for each organization
-
+                // for each organization
+                OrgWorker orgWorker = new OrgWorker(orgList.get(idxNextOrgFromTheList).getAsJsonPrimitive("login").getAsString(), queryDb, propertyDb);
+                prevReq = orgWorker.startOrContinue(prevReq);
 
                 // update property record
                 propertyDb.put(Constants.PROP_LAST_FINISHED_ORG_ID,
                         orgList.get(idxNextOrgFromTheList).getAsJsonPrimitive("id").getAsString());
+                idxNextOrgFromTheList ++;
             }
 
             // get new list
