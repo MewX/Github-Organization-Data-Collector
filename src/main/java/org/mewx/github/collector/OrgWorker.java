@@ -70,7 +70,7 @@ public class OrgWorker {
         for (String repoName : repoNames.keySet()) {
             try {
                 RepoWorker repoWorker = new RepoWorker(conn, ORG_NAME, repoName, repoNames.get(repoName), QUERY_DB, PROPERTY_DB);
-                repoWorker.run();
+                repoWorker.run(repoNames.get(repoName));
 
             } catch (Exception e) {
                 e.printStackTrace();

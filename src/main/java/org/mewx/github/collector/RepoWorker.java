@@ -181,7 +181,7 @@ public class RepoWorker {
         return "cd " + new File(getLocalFullPathToProject(false)).getAbsolutePath() + " && linguist";
     }
 
-    public void run() throws GitAPIException, SQLException, IOException {
+    public void run(String blogUrl) throws GitAPIException, SQLException, IOException {
         // reset repo and clone the repo and run the analyser from scratch
         resetRepo();
         cloneRepo();
@@ -198,7 +198,8 @@ public class RepoWorker {
             System.err.println("working on commit - " + commit.commitId);
 
             // run the linguist command and get output
-            String linguistOutput = new CmdExecutor(buildLinguistCommand()).getFullInput(false);
+            CmdExecutor executor = new CmdExecutor(buildLinguistCommand());
+            String linguistOutput = executor.getFullInput(true) + executor.getFullError();
 
             // set message: original hash | blogUrl | raw linguist output
             /*
@@ -210,7 +211,7 @@ public class RepoWorker {
             0.13%   Perl
             0.03%   PLpgSQL
              */
-            commit.msg = String.format("%s | %s | %s", commit.msg, REPO_URL, linguistOutput);
+            commit.msg = String.format("%s | %s | %s", commit.msg, blogUrl, linguistOutput);
             System.err.println("commit msg: " + commit.msg);
 
             commitDb.insert(commit);
