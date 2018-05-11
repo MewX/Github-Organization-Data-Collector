@@ -54,12 +54,10 @@ public class OrgWorker {
             return prev;
         }
 
-        // TODO: save the orgType somehow
-
         // collect all repo lists
         String lastRepoName = PROPERTY_DB.get(Constants.PROP_LAST_FINISHED_REPO_NAME);
         prev = new OrgRepo().collect(ORG_NAME, prev, QUERY_DB);
-        List<String> repoNames = getRemainingValidRepo(lastRepoName); // checker part 1
+        Map<String, String> repoNames = getRemainingValidRepo(lastRepoName); // checker part 1
 
         // checker part 2
         if (repoNames.size() < Constants.MIN_NUMBER_OF_VALID_REPOS) {
@@ -69,9 +67,10 @@ public class OrgWorker {
         }
 
         // for each repo
-        for (String repoName : repoNames) {
+        for (String repoName : repoNames.keySet()) {
             try {
-                // TODO
+                RepoWorker repoWorker = new RepoWorker(conn, ORG_NAME, repoName, repoNames.get(repoName), QUERY_DB, PROPERTY_DB);
+                repoWorker.run(orgType);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -82,10 +81,10 @@ public class OrgWorker {
         return prev;
     }
 
-    private List<String> getRemainingValidRepo(String lastRepoName) throws SQLException {
+    private Map<String, String> getRemainingValidRepo(String lastRepoName) throws SQLException {
         boolean foundLastRepoName = lastRepoName == null || lastRepoName.length()  == 0; // unset last repo name, true
 
-        List<String> repoNames = new ArrayList<>();
+        Map<String, String> repoNames = new HashMap<>();
         ResultSet rs = QUERY_DB.select(new OrgRepo().TYPE);
         while (rs.next()) {
             String json = rs.getString("content");
@@ -96,6 +95,7 @@ public class OrgWorker {
                 for (JsonElement ele : gson.fromJson(json, JsonArray.class)) {
                     JsonObject repo = ele.getAsJsonObject();
                     String currentRepoName = repo.getAsJsonPrimitive("full_name").getAsString();
+                    String currentRepoGitUrl = repo.getAsJsonPrimitive("git_url").getAsString();
 
                     // find the last one
                     if (!foundLastRepoName) {
@@ -105,7 +105,7 @@ public class OrgWorker {
                     }
 
                     // only valid repo after the last one
-                    if (validRepo(repo)) repoNames.add(currentRepoName);
+                    if (validRepo(repo)) repoNames.put(currentRepoName, currentRepoGitUrl);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -135,7 +135,7 @@ public class OrgWorker {
             if (noStars < Constants.MIN_NUMBER_OF_STARS) return false;
         } catch (ParseException e) {
             e.printStackTrace();
-            MailSender.send("Excpetion:" + ExceptionHelper.toString(e) + "\nDon't know why the data cannot be found: " + object.toString());
+            MailSender.send("Exception:" + ExceptionHelper.toString(e) + "\nDon't know why the data cannot be found: " + object.toString());
             return false;
         }
         return true;
@@ -157,7 +157,7 @@ public class OrgWorker {
             if (obj.has("blog"))
                 blog = obj.getAsJsonPrimitive("blog").getAsString().trim();
 
-            if (blog.length() == 0) {
+            if (blog == null || blog.length() == 0) {
                 return null; // not provided
             } else if (blog.contains(".org")) {
                 return ORG_TYPE.ORGANIZATION;

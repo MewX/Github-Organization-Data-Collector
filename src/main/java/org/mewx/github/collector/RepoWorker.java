@@ -10,6 +10,7 @@ import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.mewx.github.collector.util.CmdExecutor;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,8 +44,7 @@ public class RepoWorker {
      * Reset a repo (delete, re-clone, loop through each commit weekly)
      */
     private void resetRepo() {
-        // TODO: clear database related records
-
+        // P.S. no need to clear database related records because the auto-commit is switched off in this process
         // delete local files
         deleteFolder(new File(getLocalFullPathToProject()));
     }
@@ -127,7 +127,8 @@ public class RepoWorker {
         List<CommitDb.Commit> commits = new ArrayList<>();
         for (RevCommit commit : git.log().all().call()) {
             final PersonIdent authorId = commit.getAuthorIdent();
-            commits.add(new CommitDb.Commit(REPO_NAME, new Timestamp(authorId.getWhen().getTime()), "", 0, authorId.getEmailAddress()));
+            // P.S. getName() returns the commit hash
+            commits.add(new CommitDb.Commit(REPO_NAME, new Timestamp(authorId.getWhen().getTime()), commit.getName(), 0, authorId.getEmailAddress()));
         }
 
 
@@ -176,7 +177,11 @@ public class RepoWorker {
         return filteredCommits;
     }
 
-    public void run(String repoName, String repoGitUrl) throws GitAPIException, SQLException, IOException {
+    private String buildLinguistCommand() {
+        return "cd " + new File(getLocalBasePath()).getAbsolutePath() + " && linguist";
+    }
+
+    public void run(String blogUrl) throws GitAPIException, SQLException, IOException {
         // reset repo and clone the repo and run the analyser from scratch
         resetRepo();
         cloneRepo();
@@ -188,10 +193,27 @@ public class RepoWorker {
         // get all commits from the repo
         List<CommitDb.Commit> commits = filterWantedCommits(getAllCommits());
         for (CommitDb.Commit commit : commits) {
+            reattachMasterBranch();
+            detachBranch(commit.msg);
             System.err.println("working on commit - " + commit.commitId);
-            // TODO: run the linguist command and get output
 
-            // TODO: set message
+            // run the linguist command and get output
+            // TODO: enable this
+            String linguistOutput = "placeholder";
+//            String linguistOutput = new CmdExecutor(buildLinguistCommand()).getFullInput(false);
+
+            // set message: original hash | blogUrl | raw linguist output
+            /*
+            # linguist
+            98.36%  Python
+            0.78%   C
+            0.57%   Shell
+            0.13%   C++
+            0.13%   Perl
+            0.03%   PLpgSQL
+             */
+            commit.msg = String.format("%s | %s | %s", commit.msg, blogUrl, linguistOutput);
+            System.err.println("commit msg: " + commit.msg);
 
             commitDb.insert(commit);
         }

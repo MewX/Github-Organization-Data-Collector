@@ -7,8 +7,7 @@ public class ExceptionHelper {
     public static String toString(Exception e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        // FIXME - exception not full
         e.printStackTrace(pw);
-        return pw.toString();
+        return sw.toString();
     }
 }

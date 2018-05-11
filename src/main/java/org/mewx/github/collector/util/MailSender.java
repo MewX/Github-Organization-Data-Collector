@@ -14,7 +14,7 @@ import javax.mail.internet.MimeMessage;
 import static org.mewx.github.collector.Constants.*;
 
 public class MailSender {
-    private static boolean ENABLED = true; // TODO: the switch for debugging, enable this when releasing
+    private static boolean ENABLED = true; // the switch for debugging, enable this when releasing
 
     public static void main(String[] args) {
         send("testing mail");

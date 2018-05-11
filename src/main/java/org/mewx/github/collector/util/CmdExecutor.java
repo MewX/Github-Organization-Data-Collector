@@ -34,9 +34,10 @@ public class CmdExecutor {
             outputStream = cmdProcess.getOutputStream();
             errorStream = cmdProcess.getErrorStream();
             inputStream = cmdProcess.getInputStream();
-
-        } catch (IOException e) {
+            cmdProcess.waitFor();
+        } catch (Exception e) {
             e.printStackTrace();
+            MailSender.send("Command '" + cmd + "' run failed: " + ExceptionHelper.toString(e));
             return false;
         }
 
