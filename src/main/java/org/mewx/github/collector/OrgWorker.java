@@ -10,23 +10,18 @@ import org.mewx.github.collector.type.OrgRepo;
 import org.mewx.github.collector.util.ExceptionHelper;
 import org.mewx.github.collector.util.MailSender;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class deal with a specified organization
  */
 public class OrgWorker {
-    public enum ORG_TYPE {
-        ORGANIZATION,
-        COMOPANY
-    }
-
     private static SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss'Z'");
     private final Conn conn;
     private final String ORG_NAME;
@@ -47,8 +42,8 @@ public class OrgWorker {
     public Map<String, String> startOrContinue(Map<String, String> prev) throws SQLException {
         // check account is company or organization based on `blog` url
         prev = new OrgDetail().collect(ORG_NAME, prev, QUERY_DB);
-        ORG_TYPE orgType = getOrgType(prev.get(LightNetwork.HEADER_CONTENT));
-        if (orgType == null) {
+        String orgBlog = getOrgType(prev.get(LightNetwork.HEADER_CONTENT));
+        if (orgBlog == null) {
             // unwanted organization
             System.err.println("Current organization does not provide the website: " + ORG_NAME);
             return prev;
@@ -70,7 +65,7 @@ public class OrgWorker {
         for (String repoName : repoNames.keySet()) {
             try {
                 RepoWorker repoWorker = new RepoWorker(conn, ORG_NAME, repoName, repoNames.get(repoName), QUERY_DB, PROPERTY_DB);
-                repoWorker.run(repoNames.get(repoName));
+                repoWorker.run(orgBlog);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -144,9 +139,9 @@ public class OrgWorker {
     /**
      * get the organization type of the working on organization
      * @param orgDetailJson the input json fetched from org detail request
-     * @return nullable ORG_TYPE
+     * @return nullable URL
      */
-    private ORG_TYPE getOrgType(String orgDetailJson) {
+    private String getOrgType(String orgDetailJson) {
         if (orgDetailJson == null || orgDetailJson.length() < 2) return null;
 
         // org detail string
@@ -157,13 +152,7 @@ public class OrgWorker {
             if (obj.has("blog"))
                 blog = obj.getAsJsonPrimitive("blog").getAsString().trim();
 
-            if (blog == null || blog.length() == 0) {
-                return null; // not provided
-            } else if (blog.contains(".org")) {
-                return ORG_TYPE.ORGANIZATION;
-            } else {
-                return ORG_TYPE.COMOPANY; // provided and allowed custom domain name
-            }
+            return blog;
         } catch (Exception e) {
             e.printStackTrace();
             MailSender.send("Exception: " + ExceptionHelper.toString(e) + "\nBad json content: " + orgDetailJson);

@@ -177,8 +177,8 @@ public class RepoWorker {
         return filteredCommits;
     }
 
-    private String buildLinguistCommand() {
-        return "cd " + new File(getLocalFullPathToProject(false)).getAbsolutePath() + " && linguist";
+    private String[] buildLinguistCommand() {
+        return new String[]{"cd", new File(getLocalFullPathToProject(false)).getAbsolutePath(), "&&", "linguist"};
     }
 
     public void run(String blogUrl) throws GitAPIException, SQLException, IOException {
@@ -199,7 +199,7 @@ public class RepoWorker {
 
             // run the linguist command and get output
             CmdExecutor executor = new CmdExecutor(buildLinguistCommand());
-            String linguistOutput = executor.getFullInput(true) + executor.getFullError();
+            String linguistOutput = executor.getFullInput(false).trim() + executor.getFullError().trim();
 
             // set message: original hash | blogUrl | raw linguist output
             /*

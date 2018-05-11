@@ -1,8 +1,8 @@
 package org.mewx.github.collector.util;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 /**
  * This class is used to run an external application and get the output result
@@ -16,7 +16,7 @@ public class CmdExecutor {
 
     public CmdExecutor() { }
 
-    public CmdExecutor(String cmd) {
+    public CmdExecutor(String[] cmd) {
         execute(cmd);
     }
 
@@ -25,8 +25,8 @@ public class CmdExecutor {
      * @param cmd command line
      * @return false if fails, otherwise true
      */
-    public boolean execute(String cmd) {
-        System.out.println("Executing: " + cmd);
+    public boolean execute(String[] cmd) {
+        System.out.println("Executing: " + Arrays.toString(cmd));
         try {
             if (cmdProcess != null)
                 cmdProcess.destroy();
@@ -37,7 +37,7 @@ public class CmdExecutor {
             cmdProcess.waitFor();
         } catch (Exception e) {
             e.printStackTrace();
-            MailSender.send("Command '" + cmd + "' run failed: " + ExceptionHelper.toString(e));
+            MailSender.send("Command failed to run: " + ExceptionHelper.toString(e));
             return false;
         }
 
@@ -68,7 +68,6 @@ public class CmdExecutor {
     private String getFullTextFromInputStream(InputStream is) {
         StringBuilder sb = new StringBuilder();
         try {
-            Thread.sleep(2000);
             while (is.available() > 0)
                 sb.append((char) is.read());
         } catch (Exception e) {
