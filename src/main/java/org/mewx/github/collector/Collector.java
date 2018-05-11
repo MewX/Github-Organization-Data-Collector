@@ -41,7 +41,7 @@ public class Collector extends CollectorCommon {
 
         // get list one by one first (5000 * 100)
         while (true) {
-            String lastOrgListJson = getLastQueriedOrganizationContent(queryDb, propertyDb);
+            String lastOrgListJson = getLastQueriedOrganizationContent(queryDb);
             if (lastOrgListJson == null) {
                 // for the first request
                 prevReq = new OrganizationList().collect("0", prevReq, queryDb);
@@ -49,7 +49,7 @@ public class Collector extends CollectorCommon {
             }
 
             List<JsonObject> orgList = extractOrganization(lastOrgListJson);
-            if (orgList.size() != 0) {
+            if (orgList.size() == 0) {
                 MailSender.send(Constants.MAIL_NAME, Constants.MAIL_SUBJECT, "got empty org list: " + lastOrgListJson);
                 System.exit(-2);
             }
@@ -63,7 +63,7 @@ public class Collector extends CollectorCommon {
             // start working on current organization
             while (idxNextOrgFromTheList < orgList.size()) {
                 // for each organization
-                OrgWorker orgWorker = new OrgWorker(orgList.get(idxNextOrgFromTheList).getAsJsonPrimitive("login").getAsString(), queryDb, propertyDb);
+                OrgWorker orgWorker = new OrgWorker(c, orgList.get(idxNextOrgFromTheList).getAsJsonPrimitive("login").getAsString(), queryDb, propertyDb);
                 prevReq = orgWorker.startOrContinue(prevReq);
 
                 // update property record
@@ -77,15 +77,23 @@ public class Collector extends CollectorCommon {
 
             // exit condition
             ResultSet resultSet = queryDb.select(new OrganizationList().TYPE);
-            if (resultSet.last() && resultSet.getRow() > Constants.NUMBER_OF_ORG_PAGES) break;
+            if (getNumberOfResultInResultSet(resultSet) > Constants.NUMBER_OF_ORG_PAGES) break;
         }
 
         c.close();
     }
 
-    private String getLastQueriedOrganizationContent(QueryDb queryDb, PropertyDb propertyDb) throws SQLException {
+    private int getNumberOfResultInResultSet(ResultSet set) throws SQLException {
+        int count = 0;
+        while (set.next()) count ++;
+        return count;
+    }
+
+    private String getLastQueriedOrganizationContent(QueryDb queryDb) throws SQLException {
+        String content = null;
         ResultSet set = queryDb.select(new OrganizationList().TYPE);
-        return set.last() ? set.getString("content") : null;
+        while (set.next()) content = set.getString("content");
+        return content;
     }
 
     private List<JsonObject> extractOrganization(String content) {

@@ -14,6 +14,7 @@ import javax.mail.internet.MimeMessage;
 import static org.mewx.github.collector.Constants.*;
 
 public class MailSender {
+    private static boolean ENABLED = true; // TODO: the switch for debugging, enable this when releasing
 
     public static void main(String[] args) {
         send("testing mail");
@@ -24,6 +25,8 @@ public class MailSender {
     }
 
     public static void send(String to, String subject, String content) {
+        if (!ENABLED) return;
+
         final String username = "mseopt@gmail.com";
 
         Properties props = new Properties();

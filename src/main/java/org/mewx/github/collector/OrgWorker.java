@@ -1,11 +1,17 @@
 package org.mewx.github.collector;
 
+import au.edu.uofa.sei.assignment1.collector.LightNetwork;
+import au.edu.uofa.sei.assignment1.collector.db.Conn;
 import au.edu.uofa.sei.assignment1.collector.db.PropertyDb;
 import au.edu.uofa.sei.assignment1.collector.db.QueryDb;
 import com.google.gson.*;
+import org.mewx.github.collector.type.OrgDetail;
 import org.mewx.github.collector.type.OrgRepo;
+import org.mewx.github.collector.util.ExceptionHelper;
 import org.mewx.github.collector.util.MailSender;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -16,12 +22,19 @@ import java.util.*;
  * This class deal with a specified organization
  */
 public class OrgWorker {
+    public enum ORG_TYPE {
+        ORGANIZATION,
+        COMOPANY
+    }
+
     private static SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss'Z'");
+    private final Conn conn;
     private final String ORG_NAME;
     private final QueryDb QUERY_DB;
     private final PropertyDb PROPERTY_DB;
 
-    public OrgWorker(String orgName, QueryDb q, PropertyDb p) {
+    public OrgWorker(Conn c, String orgName, QueryDb q, PropertyDb p) {
+        conn = c;
         ORG_NAME = orgName;
         QUERY_DB = q;
         PROPERTY_DB = p;
@@ -32,11 +45,21 @@ public class OrgWorker {
      * this function also detects whether the organization account is valid or not.
      */
     public Map<String, String> startOrContinue(Map<String, String> prev) throws SQLException {
-        // TODO: check account is company or organization
+        // check account is company or organization based on `blog` url
+        prev = new OrgDetail().collect(ORG_NAME, prev, QUERY_DB);
+        ORG_TYPE orgType = getOrgType(prev.get(LightNetwork.HEADER_CONTENT));
+        if (orgType == null) {
+            // unwanted organization
+            System.err.println("Current organization does not provide the website: " + ORG_NAME);
+            return prev;
+        }
+
+        // TODO: save the orgType somehow
 
         // collect all repo lists
+        String lastRepoName = PROPERTY_DB.get(Constants.PROP_LAST_FINISHED_REPO_NAME);
         prev = new OrgRepo().collect(ORG_NAME, prev, QUERY_DB);
-        List<String> repoNames = getValidRepo(); // checker part 1
+        List<String> repoNames = getRemainingValidRepo(lastRepoName); // checker part 1
 
         // checker part 2
         if (repoNames.size() < Constants.MIN_NUMBER_OF_VALID_REPOS) {
@@ -45,15 +68,23 @@ public class OrgWorker {
             return prev;
         }
 
-        String lastRepoName = PROPERTY_DB.get(Constants.PROP_LAST_FINISHED_REPO_NAME);
-        if (lastRepoName == null) {
-            // TODO:
+        // for each repo
+        for (String repoName : repoNames) {
+            try {
+                // TODO
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                MailSender.send("Exception: " + ExceptionHelper.toString(e) + "\n when dealing with repo: " + repoName);
+            }
         }
 
         return prev;
     }
 
-    private List<String> getValidRepo() throws SQLException {
+    private List<String> getRemainingValidRepo(String lastRepoName) throws SQLException {
+        boolean foundLastRepoName = lastRepoName == null || lastRepoName.length()  == 0; // unset last repo name, true
+
         List<String> repoNames = new ArrayList<>();
         ResultSet rs = QUERY_DB.select(new OrgRepo().TYPE);
         while (rs.next()) {
@@ -61,9 +92,24 @@ public class OrgWorker {
 
             // use gson
             Gson gson = new GsonBuilder().create();
-            for (JsonElement ele : gson.fromJson(json, JsonArray.class)) {
-                JsonObject repo = ele.getAsJsonObject();
-                if (validRepo(repo)) repoNames.add(repo.getAsJsonPrimitive("full_name").getAsString());
+            try {
+                for (JsonElement ele : gson.fromJson(json, JsonArray.class)) {
+                    JsonObject repo = ele.getAsJsonObject();
+                    String currentRepoName = repo.getAsJsonPrimitive("full_name").getAsString();
+
+                    // find the last one
+                    if (!foundLastRepoName) {
+                        if (currentRepoName.equals(lastRepoName)) foundLastRepoName = true;
+                        // skip the last one as well
+                        break;
+                    }
+
+                    // only valid repo after the last one
+                    if (validRepo(repo)) repoNames.add(currentRepoName);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                MailSender.send("Exception: " + ExceptionHelper.toString(e) + "\nBad json content: " + json);
             }
         }
         return repoNames;
@@ -73,8 +119,8 @@ public class OrgWorker {
      * parse the orgrepo list element object
      */
     private boolean validRepo(JsonObject object) {
-        // test date range
         try {
+            // test date range
             Calendar createDate = Calendar.getInstance();
             createDate.setTime(TIME_FORMATTER.parse(object.getAsJsonPrimitive("created_at").getAsString()));
 
@@ -83,17 +129,46 @@ public class OrgWorker {
 
             createDate.add(Calendar.DATE, Constants.DAYS_BETWEEN_FIRST_AND_LAST_COMMIT);
             if (createDate.after(updateDate)) return false;
+
+            // test number of stars
+            int noStars = object.getAsJsonPrimitive("stargazers_count").getAsInt();
+            if (noStars < Constants.MIN_NUMBER_OF_STARS) return false;
         } catch (ParseException e) {
             e.printStackTrace();
-            MailSender.send("Don't know why the data cannot be found: " + object.toString());
+            MailSender.send("Excpetion:" + ExceptionHelper.toString(e) + "\nDon't know why the data cannot be found: " + object.toString());
             return false;
         }
-
-        // test number of commits
-        // TODO: collect repo detail data first
-
-
         return true;
+    }
+
+    /**
+     * get the organization type of the working on organization
+     * @param orgDetailJson the input json fetched from org detail request
+     * @return nullable ORG_TYPE
+     */
+    private ORG_TYPE getOrgType(String orgDetailJson) {
+        if (orgDetailJson == null || orgDetailJson.length() < 2) return null;
+
+        // org detail string
+        Gson gson = new GsonBuilder().create();
+        try {
+            JsonObject obj = gson.fromJson(orgDetailJson, JsonObject.class);
+            String blog = null;
+            if (obj.has("blog"))
+                blog = obj.getAsJsonPrimitive("blog").getAsString().trim();
+
+            if (blog.length() == 0) {
+                return null; // not provided
+            } else if (blog.contains(".org")) {
+                return ORG_TYPE.ORGANIZATION;
+            } else {
+                return ORG_TYPE.COMOPANY; // provided and allowed custom domain name
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            MailSender.send("Exception: " + ExceptionHelper.toString(e) + "\nBad json content: " + orgDetailJson);
+            return null;
+        }
     }
 
 }

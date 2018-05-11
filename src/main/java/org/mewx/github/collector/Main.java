@@ -2,6 +2,7 @@ package org.mewx.github.collector;
 
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
+import org.mewx.github.collector.util.ExceptionHelper;
 import org.mewx.github.collector.util.MailSender;
 
 import java.io.PrintWriter;
@@ -57,10 +58,7 @@ public class Main {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            MailSender.send("main function captured failure: " + sw.toString());
+            MailSender.send("main function captured failure: " + ExceptionHelper.toString(e));
         }
 
     }
