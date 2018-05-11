@@ -178,10 +178,6 @@ public class RepoWorker {
         return filteredCommits;
     }
 
-    private String[] buildLinguistCommand() {
-        return new String[]{"cd", new File(getLocalFullPathToProject(false)).getAbsolutePath(), "&&", "linguist"};
-    }
-
     public void run(String blogUrl) throws GitAPIException, SQLException, IOException, TimeoutException, InterruptedException {
         // reset repo and clone the repo and run the analyser from scratch
         resetRepo();
@@ -199,8 +195,10 @@ public class RepoWorker {
             System.err.println("working on commit - " + commit.commitId);
 
             // run the linguist command and get output
-            System.err.println("Executing: " + Arrays.toString(buildLinguistCommand()));
-            String linguistOutput = new ProcessExecutor().command(buildLinguistCommand()).readOutput(true).execute().outputUTF8();
+            System.err.println("Executing linguist on: " + getLocalFullPathToProject();
+            String linguistOutput = new ProcessExecutor().command("linguist").readOutput(true)
+                    .directory(new File(getLocalFullPathToProject()))
+                    .execute().outputUTF8();
 
             // set message: original hash | blogUrl | raw linguist output
             /*
