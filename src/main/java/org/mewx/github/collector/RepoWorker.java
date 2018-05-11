@@ -10,7 +10,7 @@ import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.mewx.github.collector.util.CmdExecutor;
+import org.zeroturnaround.exec.ProcessExecutor;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +19,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This class works for a specific repo
@@ -181,7 +182,7 @@ public class RepoWorker {
         return new String[]{"cd", new File(getLocalFullPathToProject(false)).getAbsolutePath(), "&&", "linguist"};
     }
 
-    public void run(String blogUrl) throws GitAPIException, SQLException, IOException {
+    public void run(String blogUrl) throws GitAPIException, SQLException, IOException, TimeoutException, InterruptedException {
         // reset repo and clone the repo and run the analyser from scratch
         resetRepo();
         cloneRepo();
@@ -198,8 +199,8 @@ public class RepoWorker {
             System.err.println("working on commit - " + commit.commitId);
 
             // run the linguist command and get output
-            CmdExecutor executor = new CmdExecutor(buildLinguistCommand());
-            String linguistOutput = executor.getFullInput(false).trim() + executor.getFullError().trim();
+            System.err.println("Executing: " + Arrays.toString(buildLinguistCommand()));
+            String linguistOutput = new ProcessExecutor().command(buildLinguistCommand()).readOutput(true).execute().outputUTF8();
 
             // set message: original hash | blogUrl | raw linguist output
             /*
