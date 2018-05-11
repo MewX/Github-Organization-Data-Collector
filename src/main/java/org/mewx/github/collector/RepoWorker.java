@@ -81,7 +81,7 @@ public class RepoWorker {
     }
 
     private String getLocalBasePath() {
-        return Constants.LOCAL_REPO_BASE_DIR + ORG_NAME + "/";
+        return Constants.LOCAL_REPO_BASE_DIR;
     }
 
     private Git openExistingRepo(String pathToDotGit) throws IOException {
@@ -178,7 +178,7 @@ public class RepoWorker {
     }
 
     private String buildLinguistCommand() {
-        return "cd " + new File(getLocalBasePath()).getAbsolutePath() + " && linguist";
+        return "cd " + new File(getLocalFullPathToProject(false)).getAbsolutePath() + " && linguist";
     }
 
     public void run() throws GitAPIException, SQLException, IOException {
