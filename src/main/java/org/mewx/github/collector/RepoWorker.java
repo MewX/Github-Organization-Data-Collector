@@ -195,9 +195,9 @@ public class RepoWorker {
             System.err.println("working on commit - " + commit.commitId);
 
             // run the linguist command and get output
-            System.err.println("Executing linguist on: " + getLocalFullPathToProject();
+            System.err.println("Executing linguist on: " + getLocalFullPathToProject());
             String linguistOutput = new ProcessExecutor().command("linguist").readOutput(true)
-                    .directory(new File(getLocalFullPathToProject()))
+                    .directory(new File(getLocalFullPathToProject()).getAbsoluteFile())
                     .execute().outputUTF8();
 
             // set message: original hash | blogUrl | raw linguist output
