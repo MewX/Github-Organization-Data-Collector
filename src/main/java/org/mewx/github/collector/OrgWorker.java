@@ -1,13 +1,11 @@
 package org.mewx.github.collector;
 
-import au.edu.uofa.sei.assignment1.collector.LightNetwork;
 import au.edu.uofa.sei.assignment1.collector.db.Conn;
 import au.edu.uofa.sei.assignment1.collector.db.PropertyDb;
 import au.edu.uofa.sei.assignment1.collector.db.QueryDb;
 import com.google.gson.*;
 import org.mewx.github.collector.type.OrgDetail;
 import org.mewx.github.collector.type.OrgRepo;
-import org.mewx.github.collector.type.OrganizationList;
 import org.mewx.github.collector.util.ExceptionHelper;
 import org.mewx.github.collector.util.MailSender;
 
@@ -151,7 +149,7 @@ public class OrgWorker {
         try {
             JsonObject obj = gson.fromJson(orgDetailJson, JsonObject.class);
             String blog = null;
-            if (obj.has("blog"))
+            if (obj.has("blog") && !obj.get("blog").isJsonNull())
                 blog = obj.getAsJsonPrimitive("blog").getAsString().trim();
 
             return blog;

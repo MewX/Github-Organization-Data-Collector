@@ -157,7 +157,7 @@ public class RepoWorker {
 
             if (!baseCalendar.after(tempCalendar)) {
                 // commit date is equal to or after base date
-                baseCalendar.add(Calendar.DATE, 28); // add 4 weeks
+                baseCalendar.add(Calendar.DATE, Constants.COMMIT_TRAVERSE_INTERVAL_WEEKS * 7); // jump a set of days
                 if (baseCalendar.after(tempCalendar)) {
                     // good, this is what I want, and I will use this commit
                     System.err.println("Selected commit: " + commit.msg + " at " + DATE_FORMAT.format(date));

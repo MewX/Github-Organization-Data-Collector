@@ -28,11 +28,11 @@ import java.util.Map;
  */
 public class Collector extends CollectorCommon {
 
-    public void run() throws SQLException {
+    public void run() throws Exception {
         run(Constants.DB_NAME);
     }
 
-    public void run(String dbName) throws SQLException {
+    public void run(String dbName) throws Exception {
         // get connection
         Conn c = new Conn(dbName);
         PropertyDb propertyDb = new PropertyDb(c);
@@ -120,8 +120,6 @@ public class Collector extends CollectorCommon {
                 return i;
             }
         }
-
-        if (i == jsonList.size()) return -1; // finished this list
-        else return 0; // not in this list, so guessing it's not started yet
+        return 0; // not in this list, so guessing it's not started yet
     }
 }
