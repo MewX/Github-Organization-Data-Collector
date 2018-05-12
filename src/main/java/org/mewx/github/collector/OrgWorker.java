@@ -95,7 +95,7 @@ public class OrgWorker {
                     if (!foundLastRepoName) {
                         if (currentRepoName.equals(lastRepoName)) foundLastRepoName = true;
                         // skip the last one as well
-                        break;
+                        continue;
                     }
 
                     // only valid repo after the last one

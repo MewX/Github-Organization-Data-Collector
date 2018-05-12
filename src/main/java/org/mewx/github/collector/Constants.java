@@ -11,8 +11,8 @@ public class Constants {
     public static final String DB_NAME = "github-org.db";
     public static final String LOCAL_REPO_BASE_DIR = "repos/";
     public static final int NUMBER_OF_ORG_PAGES = 1000; // each page contains 100 pages (many filtered repos)
-    public static final int MIN_NUMBER_OF_VALID_REPOS = 5;
-    public static final int MIN_NUMBER_OF_STARS = 100;
+    public static final int MIN_NUMBER_OF_VALID_REPOS = 3;
+    public static final int MIN_NUMBER_OF_STARS = 80;
     public static final int DAYS_BETWEEN_FIRST_AND_LAST_COMMIT = 30 * 6; // 6 months
     public static final int COMMIT_TRAVERSE_INTERVAL_WEEKS = 1;
 
