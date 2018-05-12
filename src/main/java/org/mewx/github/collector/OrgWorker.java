@@ -91,15 +91,14 @@ public class OrgWorker {
                     String currentRepoName = repo.getAsJsonPrimitive("full_name").getAsString();
                     String currentRepoGitUrl = repo.getAsJsonPrimitive("git_url").getAsString();
 
-                    // find the last one
-                    if (!foundLastRepoName) {
-                        if (currentRepoName.equals(lastRepoName)) foundLastRepoName = true;
-                        // skip the last one as well
-                        continue;
-                    }
-
                     // only valid repo after the last one
                     if (validRepo(repo)) repoNames.put(currentRepoName, currentRepoGitUrl);
+
+                    // find the last one
+                    if (!foundLastRepoName && currentRepoName.equals(lastRepoName)) {
+                        foundLastRepoName = true;
+                        repoNames.clear();
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
