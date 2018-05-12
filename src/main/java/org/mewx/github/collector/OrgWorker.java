@@ -7,6 +7,7 @@ import au.edu.uofa.sei.assignment1.collector.db.QueryDb;
 import com.google.gson.*;
 import org.mewx.github.collector.type.OrgDetail;
 import org.mewx.github.collector.type.OrgRepo;
+import org.mewx.github.collector.type.OrganizationList;
 import org.mewx.github.collector.util.ExceptionHelper;
 import org.mewx.github.collector.util.MailSender;
 
@@ -42,7 +43,7 @@ public class OrgWorker {
     public Map<String, String> startOrContinue(Map<String, String> prev) throws SQLException {
         // check account is company or organization based on `blog` url
         prev = new OrgDetail().collect(ORG_NAME, prev, QUERY_DB);
-        String orgBlog = getOrgType(prev.get(LightNetwork.HEADER_CONTENT));
+        String orgBlog = getOrgType();
         if (orgBlog == null) {
             // unwanted organization
             System.err.println("Current organization does not provide the website: " + ORG_NAME);
@@ -66,7 +67,7 @@ public class OrgWorker {
             try {
                 RepoWorker repoWorker = new RepoWorker(conn, ORG_NAME, repoName, repoNames.get(repoName), QUERY_DB, PROPERTY_DB);
                 repoWorker.run(orgBlog);
-
+                PROPERTY_DB.put(Constants.PROP_LAST_FINISHED_REPO_NAME, repoName);
             } catch (Exception e) {
                 e.printStackTrace();
                 MailSender.send("Exception: " + ExceptionHelper.toString(e) + "\n when dealing with repo: " + repoName);
@@ -80,7 +81,7 @@ public class OrgWorker {
         boolean foundLastRepoName = lastRepoName == null || lastRepoName.length()  == 0; // unset last repo name, true
 
         Map<String, String> repoNames = new HashMap<>();
-        ResultSet rs = QUERY_DB.select(new OrgRepo().TYPE);
+        ResultSet rs = new OrgRepo().selectOrgRepos(conn, ORG_NAME + "/%");
         while (rs.next()) {
             String json = rs.getString("content");
 
@@ -138,10 +139,11 @@ public class OrgWorker {
 
     /**
      * get the organization type of the working on organization
-     * @param orgDetailJson the input json fetched from org detail request
      * @return nullable URL
      */
-    private String getOrgType(String orgDetailJson) {
+    private String getOrgType() throws SQLException {
+        // query to get the org detail json
+        String orgDetailJson = new OrgDetail().selectOrgOrgDetail(conn, "%/" + ORG_NAME);
         if (orgDetailJson == null || orgDetailJson.length() < 2) return null;
 
         // org detail string

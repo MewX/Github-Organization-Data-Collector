@@ -157,7 +157,7 @@ public class RepoWorker {
 
             if (!baseCalendar.after(tempCalendar)) {
                 // commit date is equal to or after base date
-                baseCalendar.add(Calendar.DATE, 7); // add 1 week
+                baseCalendar.add(Calendar.DATE, 28); // add 4 weeks
                 if (baseCalendar.after(tempCalendar)) {
                     // good, this is what I want, and I will use this commit
                     System.err.println("Selected commit: " + commit.msg + " at " + DATE_FORMAT.format(date));
@@ -219,6 +219,9 @@ public class RepoWorker {
         // switch on the auto committer again
         conn.getConn().commit();
         conn.getConn().setAutoCommit(true);
+
+        // delete the folder
+        deleteFolder(new File(getLocalFullPathToProject()));
     }
 
 

@@ -1,9 +1,12 @@
 package org.mewx.github.collector.type;
 
 import au.edu.uofa.sei.assignment1.collector.Constants;
+import au.edu.uofa.sei.assignment1.collector.db.Conn;
 import au.edu.uofa.sei.assignment1.collector.db.QueryDb;
 import au.edu.uofa.sei.assignment1.collector.type.BaseKeyRequestType;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -56,6 +59,16 @@ public class OrgDetail extends BaseKeyRequestType {
     @Override
     public Map<String, String> collect(String orgName, Map<String, String> prev, QueryDb db) throws SQLException {
         return makeRequest(0, orgName, prev, db);
+    }
+
+    public String selectOrgOrgDetail(Conn conn, String paramsLike) throws SQLException {
+        final String SELECT = "SELECT * FROM queries WHERE type = ? and params like ? ORDER BY id;"; // make sure it's in order
+        PreparedStatement select = conn.getConn().prepareStatement(SELECT);
+        select.setString(1, TYPE);
+        select.setString(2, paramsLike);
+        ResultSet set = select.executeQuery();
+        if (set.next()) return set.getString("content");
+        else return null;
     }
 
 }
