@@ -20,7 +20,7 @@ public class Main {
                 new LongOpt("analyse", LongOpt.OPTIONAL_ARGUMENT, dbName, 'a')
         };
 
-        Getopt g = new Getopt("java -jar this.jar", args, "c::p::a::h", longOpts); // e.g. ... -crepo.db
+        Getopt g = new Getopt("java -jar this.jar", args, "c::s::a::n::h", longOpts); // e.g. ... -crepo.db
         g.setOpterr(false);
         int c;
         String arg;
@@ -29,16 +29,24 @@ public class Main {
             while ((c = g.getopt()) != -1) {
                 switch (c) {
                     case 'h':
-                        System.err.println("java -jar this.jar -<c|p|a>DB.NAME | <h>");
+                        System.err.println("java -jar this.jar -<c|s|n|a>DB.NAME | <h>");
                         break;
                     case 'c':
                         arg = g.getOptarg();
                         System.err.println("collecting: " + (arg == null ? "null" : arg));
                         new Collector().run(arg);
                         break;
-                    case 'p':
+                    case 's':
+                        // stacked bar chart on programming languages of `github` company
                         arg = g.getOptarg();
-                        System.err.println("parse: " + (arg == null ? "null" : arg));
+                        System.err.println("stacked bar chart: " + (arg == null ? "null" : arg));
+                        new StackedBarChartForGitHub().run(arg);
+                        break;
+                    case 'n':
+                        // the sankey diagram data generator for all collected data
+                        arg = g.getOptarg();
+                        System.err.println("Sankey diagram: " + (arg == null ? "null" : arg));
+                        // TODO: add the runner entry
                         break;
                     case 'a':
                         arg = g.getOptarg();
