@@ -1,6 +1,6 @@
 package org.mewx.github.collector.model;
 
-import java.sql.Timestamp;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -30,6 +30,10 @@ public class ProjectTechStack {
             languages.put(language,
                     languages.getOrDefault(language, 0.0) + projectTechStack.languages.get(language));
         }
+    }
+
+    public Set<String> getLanguageSet() {
+        return languages.keySet();
     }
 
 }

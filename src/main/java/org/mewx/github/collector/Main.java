@@ -20,7 +20,7 @@ public class Main {
                 new LongOpt("analyse", LongOpt.OPTIONAL_ARGUMENT, dbName, 'a')
         };
 
-        Getopt g = new Getopt("java -jar this.jar", args, "c::s::a::n::h", longOpts); // e.g. ... -crepo.db
+        Getopt g = new Getopt("java -jar this.jar", args, "c::s::a::n::o::h", longOpts); // e.g. ... -crepo.db
         g.setOpterr(false);
         int c;
         String arg;
@@ -29,7 +29,7 @@ public class Main {
             while ((c = g.getopt()) != -1) {
                 switch (c) {
                     case 'h':
-                        System.err.println("java -jar this.jar -<c|s|n|a>DB.NAME | <h>");
+                        System.err.println("java -jar this.jar -<c|s|n|o|a>DB.NAME | <h>");
                         break;
                     case 'c':
                         arg = g.getOptarg();
@@ -42,6 +42,12 @@ public class Main {
                         System.err.println("stacked bar chart: " + (arg == null ? "null" : arg));
                         new StackedBarChartForGitHub().run(arg);
                         break;
+                    case 'o':
+                        // overview
+                        arg = g.getOptarg();
+                        System.err.println("overview generate: " + (arg == null ? "null" : arg));
+                        new OverviewGenerator().run(arg);
+                        break;
                     case 'n':
                         // the sankey diagram data generator for all collected data
                         arg = g.getOptarg();
@@ -52,7 +58,6 @@ public class Main {
                         arg = g.getOptarg();
                         System.err.println("analyse: " + (arg == null ? "null" : arg));
                         break;
-
                     case ':':
                         System.out.println("You need an argument for option " + (char) g.getOptopt());
                         break;
